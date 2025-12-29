@@ -5,7 +5,7 @@ Run, firefox.exe "https://www.lme.com/en/Metals/Non-ferrous/LME-Copper#Summary"
 Sleep, 20000 ; המתן שהדף יטען
 
 MouseClick left,930,560
-Sleep, 2000
+Sleep, 1000
 
 ; העתק את תוכן הדף ללוח
 Send, ^a ; בחר הכל
@@ -14,7 +14,7 @@ Send, ^c ; העתק ללוח
 Sleep, 800
 
 ; המתן להעתקה ללוח
-ClipWait, 2
+ClipWait, 10
 
 ; קרא את תוכן הלוח ושמור אותו במשתנה
 html := Clipboard
@@ -32,6 +32,5 @@ filePath := A_ScriptDir . "\copper_price.txt"
 ; שמור את התוכן בקובץ טקסט
 FileAppend, %html%, %filePath%
 
-; שלח Ctrl+F4 כדי לסגור את הטאב בפיירפוקס
-Send, ^{F4}
+
 

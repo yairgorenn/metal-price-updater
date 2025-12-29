@@ -14,7 +14,7 @@ Send, ^c ; העתק ללוח
 Sleep, 200
 
 ; המתן להעתקה ללוח
-ClipWait, 2
+ClipWait, 10
 
 ; קרא את תוכן הלוח ושמור אותו במשתנה
 html := Clipboard
@@ -31,7 +31,6 @@ filePath := A_ScriptDir . "\aluminium_price.txt"
 ; שמור את התוכן בקובץ טקסט
 FileAppend, %html%, %filePath%
 
-; שלח Ctrl+F4 כדי לסגור את הטאב בפיירפוקס
-Send, ^{F4}
+
 
 
