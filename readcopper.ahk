@@ -14,7 +14,7 @@ Send, ^c ; העתק ללוח
 Sleep, 800
 
 ; המתן להעתקה ללוח
-ClipWait, 10
+ClipWait, 4
 
 ; קרא את תוכן הלוח ושמור אותו במשתנה
 html := Clipboard

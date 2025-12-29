@@ -6,15 +6,15 @@ Sleep, 20000 ; המתן שהדף יטען
 Clipboard = ""
 
 MouseClick left,930,560
-Sleep, 500
+Sleep, 1000
 ; העתק את תוכן הדף ללוח
 Send, ^a ; בחר הכל
-Sleep, 200
+Sleep, 800
 Send, ^c ; העתק ללוח
-Sleep, 200
+Sleep, 800
 
 ; המתן להעתקה ללוח
-ClipWait, 10
+ClipWait, 4
 
 ; קרא את תוכן הלוח ושמור אותו במשתנה
 html := Clipboard
