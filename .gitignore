@@ -7,7 +7,8 @@ __pycache__/
 venv/
 
 # Runtime files
-*.txt
+copper_price.txt
+aluminium_price.txt
 logs/
 *.log
 
