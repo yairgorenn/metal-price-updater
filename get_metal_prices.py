@@ -98,7 +98,7 @@ def wait_for_file(path, timeout=120):
         try:
             if os.path.exists(path):
                 size = os.path.getsize(path)
-                if size > 0:
+                if size > 100:
                     log(f"File ready: size={size}")
                     return True
         except Exception as e:
@@ -141,11 +141,12 @@ def run_auto_hot_key(metal_file_name):
     try:
         result = subprocess.run(
        [AUTO_HOT_KEY_APP, os.path.join(BASE_DIR, metal_file_name)],
-        timeout=60
+        timeout=180
         )
         log(f"AutoHotkey finished, returncode={result.returncode}")
         if result.returncode != 0:
             raise RuntimeError("AutoHotkey returned non-zero code")
+        time.sleep(2)
         return True
     except Exception as e:
         log(f"AutoHotkey FAILED: {e}")
@@ -179,6 +180,7 @@ def read_metal_prices():
     log(f"The copper price from LME Cash is {copper_price_eru:.2f} {ERU_SYMBOL}/ton")
 
     #get aluminium
+    time.sleep(5)
     aluminium_price = get_price(HOT_KEY_FILE_ALUMINIUM,ALUMINIUM_FILE_NAME,ALUMINIUM_TEXT_BEFORE_PRICE)
     log(f"The aluminium price from LME Cash is {aluminium_price:.2f} $/ton")
     aluminium_price_eru = round(aluminium_price*usd_eru,2)
