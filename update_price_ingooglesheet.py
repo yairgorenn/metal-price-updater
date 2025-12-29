@@ -1,14 +1,17 @@
 import gspread
 from datetime import datetime
 from oauth2client.service_account import ServiceAccountCredentials
+import  os
 
-JSON_FILE = r"c:\COPPER_PRICE\Json_cr\metalprices-18be5626fa37.json"
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+JSON_FILE = os.path.join(BASE_DIR,"Json_cr","metalprices-18be5626fa37.json")
 PRICE_LIST_SHEET_NAME = ("cable")
 
 def get_current_time():
     # get the current date time
     now = datetime.now()
-    # create the format
+    # create the forma
     current_time = now.strftime("%H:%M:%S  %d/%m/%Y")
     return current_time
 
