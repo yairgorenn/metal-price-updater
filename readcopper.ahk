@@ -24,8 +24,8 @@ if !wait_for_color(1018, 188, 0xFFFFFF) {
         MsgBox, too many tries to OPEN LME
         ExitApp
      }
-MouseClick left,676,220
-Sleep, 1000
+MouseClick left,676,200
+Sleep, 2000
 
 ; העתק את תוכן הדף ללוח
 Send, ^a ; בחר הכל
@@ -47,8 +47,6 @@ if (html == "")
 }
 
 filePath := "c:\COPPER_PRICE\copper_price.txt"
-; מחק את הקובץ הקודם אם קיים
-FileDelete, %filePath%
 
 ; שמור את התוכן בקובץ טקסט
 FileAppend, %html%, %filePath%

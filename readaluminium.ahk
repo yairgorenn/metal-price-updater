@@ -47,8 +47,6 @@ if (html == "")
 }
 
 filePath := "c:\COPPER_PRICE\aluminium_price.txt"
-; מחק את הקובץ הקודם אם קיים
-FileDelete, %filePath%
 
 ; שמור את התוכן בקובץ טקסט
 FileAppend, %html%, %filePath%
