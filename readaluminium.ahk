@@ -25,7 +25,7 @@ if !wait_for_color(1018, 188, 0xFFFFFF) {
         MsgBox, too many tries to OPEN LME
         ExitApp
      }
-MouseClick left,676,220
+MouseClick left,930,560
 Sleep, 500
 ; העתק את תוכן הדף ללוח
 Send, ^a ; בחר הכל
