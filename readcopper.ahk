@@ -46,7 +46,8 @@ if (html == "")
     return
 }
 
-filePath := "c:\COPPER_PRICE\copper_price.txt"
+filePath := A_ScriptDir . "\copper_price.txt"
+
 
 ; שמור את התוכן בקובץ טקסט
 FileAppend, %html%, %filePath%

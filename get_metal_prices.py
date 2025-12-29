@@ -19,13 +19,17 @@ import datetime
 import os,sys
 import requests
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+HOT_KEY_FILE_COPPER = os.path.join(BASE_DIR, "readcopper.ahk")
+HOT_KEY_FILE_ALUMINIUM = os.path.join(BASE_DIR, "readaluminium.ahk")
 
-RUNING_DIR = r"c:\COPPER_PRICE"
-AUTO_HOT_KEY_APP = r"C:\Program Files\\AutoHotkey\AutoHotkey.exe"
-HOT_KEY_FILE_COPPER = r"\readcopper.ahk"
-HOT_KEY_FILE_ALUMINIUM = r"\readaluminium.ahk"
-COPPER_FILE_NAME = r"\copper_price.txt"
-ALUMINIUM_FILE_NAME = r"\aluminium_price.txt"
+COPPER_FILE_NAME = os.path.join(BASE_DIR, "copper_price.txt")
+ALUMINIUM_FILE_NAME = os.path.join(BASE_DIR, "aluminium_price.txt")
+
+AUTO_HOT_KEY_APP = os.getenv("AUTOHOTKEY_PATH")
+if not AUTO_HOT_KEY_APP:
+    raise RuntimeError("AUTOHOTKEY_PATH not set")
+
 ERU_SYMBOL = "\u20AC"
 SHEKEL_SYMBOL = "\u20AA"
 COPPER_TEXT_BEFORE_PRICE ="LME Copper"
@@ -136,7 +140,7 @@ def run_auto_hot_key(metal_file_name):
     log(f"Running AutoHotkey: {metal_file_name}")
     try:
         result = subprocess.run(
-            [AUTO_HOT_KEY_APP, RUNING_DIR + metal_file_name],
+            [AUTO_HOT_KEY_APP, os.path.join(BASE_DIR, metal_file_name)],
             timeout=30
         )
         log(f"AutoHotkey finished, returncode={result.returncode}")
@@ -150,7 +154,7 @@ def run_auto_hot_key(metal_file_name):
 
 def get_price(auto_keyfile: str, text_file: str, search_text: str):
     """find the price proces"""
-    full_path = RUNING_DIR + text_file
+    full_path =  os.path.join(BASE_DIR, text_file)
     remove_old_file(full_path)
     run_auto_hot_key(auto_keyfile)
 

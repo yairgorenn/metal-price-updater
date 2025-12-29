@@ -19,14 +19,14 @@ wait_for_color(x, y, color) {
     }
 ; פתח את דפדפן פיירפוקס ונווט לאתר
 Run, firefox.exe "https://www.lme.com/en/Metals/Non-ferrous/LME-Aluminium#Summary"
-Sleep, 3000 ; המתן שהדף יטען
+Sleep, 6000 ; המתן שהדף יטען
 Clipboard = ""
 if !wait_for_color(1018, 188, 0xFFFFFF) {
         MsgBox, too many tries to OPEN LME
         ExitApp
      }
 MouseClick left,676,220
-Sleep, 100
+Sleep, 500
 ; העתק את תוכן הדף ללוח
 Send, ^a ; בחר הכל
 Sleep, 200
@@ -46,7 +46,7 @@ if (html == "")
     return
 }
 
-filePath := "c:\COPPER_PRICE\aluminium_price.txt"
+filePath := A_ScriptDir . "\aluminium_price.txt"
 
 ; שמור את התוכן בקובץ טקסט
 FileAppend, %html%, %filePath%
