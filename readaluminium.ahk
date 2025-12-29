@@ -19,7 +19,7 @@ wait_for_color(x, y, color) {
     }
 ; פתח את דפדפן פיירפוקס ונווט לאתר
 Run, firefox.exe "https://www.lme.com/en/Metals/Non-ferrous/LME-Aluminium#Summary"
-Sleep, 6000 ; המתן שהדף יטען
+Sleep, 10000 ; המתן שהדף יטען
 Clipboard = ""
 if !wait_for_color(1018, 188, 0xFFFFFF) {
         MsgBox, too many tries to OPEN LME

@@ -43,7 +43,7 @@ if not PUSHBULLET_TOKEN:
 def get_log_path():
     """Create dir for log"""
     now = datetime.datetime.now()
-    log_dir = r"C:\COPPER_PRICE\logs"
+    log_dir = os.path.join(BASE_DIR, "\logs")
     os.makedirs(log_dir, exist_ok=True)
     return fr"{log_dir}\run_{now.year}-{now.month:02d}.log"
 
