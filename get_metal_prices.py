@@ -90,7 +90,7 @@ def send_pushbullet(title, body):
         log(f"Pushbullet EXCEPTION: {e}")
 
 
-def wait_for_file(path, timeout=40):
+def wait_for_file(path, timeout=120):
     """wait until auto hot key create and close the text file with the data"""
     log(f"Waiting for file: {path}")
     start = time.time()
@@ -140,8 +140,8 @@ def run_auto_hot_key(metal_file_name):
     log(f"Running AutoHotkey: {metal_file_name}")
     try:
         result = subprocess.run(
-            [AUTO_HOT_KEY_APP, os.path.join(BASE_DIR, metal_file_name)],
-            timeout=30
+       [AUTO_HOT_KEY_APP, os.path.join(BASE_DIR, metal_file_name)],
+        timeout=60
         )
         log(f"AutoHotkey finished, returncode={result.returncode}")
         if result.returncode != 0:

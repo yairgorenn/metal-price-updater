@@ -2,7 +2,7 @@
 
 ; פתח את דפדפן פיירפוקס ונווט לאתר
 Run, firefox.exe "https://www.lme.com/en/Metals/Non-ferrous/LME-Copper#Summary"
-Sleep, 15000 ; המתן שהדף יטען
+Sleep, 20000 ; המתן שהדף יטען
 
 MouseClick left,930,560
 Sleep, 2000
