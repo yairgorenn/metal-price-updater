@@ -180,7 +180,7 @@ def read_metal_prices():
     log(f"The copper price from LME Cash is {copper_price_eru:.2f} {ERU_SYMBOL}/ton")
 
     #get aluminium
-    time.sleep(5)
+    time.sleep(15)
     aluminium_price = get_price(HOT_KEY_FILE_ALUMINIUM,ALUMINIUM_FILE_NAME,ALUMINIUM_TEXT_BEFORE_PRICE)
     log(f"The aluminium price from LME Cash is {aluminium_price:.2f} $/ton")
     aluminium_price_eru = round(aluminium_price*usd_eru,2)
