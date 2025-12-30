@@ -18,6 +18,7 @@ import update_price_ingooglesheet as upg
 import datetime
 import os,sys
 import requests
+import json
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 HOT_KEY_FILE_COPPER = os.path.join(BASE_DIR, "readcopper.ahk")
@@ -25,6 +26,8 @@ HOT_KEY_FILE_ALUMINIUM = os.path.join(BASE_DIR, "readaluminium.ahk")
 
 COPPER_FILE_NAME = os.path.join(BASE_DIR, "copper_price.txt")
 ALUMINIUM_FILE_NAME = os.path.join(BASE_DIR, "aluminium_price.txt")
+
+LAST_PRICE_FILE = os.path.join(BASE_DIR, "last_prices.json")
 
 AUTO_HOT_KEY_APP = os.getenv("AUTOHOTKEY_PATH")
 if not AUTO_HOT_KEY_APP:
@@ -39,6 +42,11 @@ PUSHBULLET_TOKEN = os.getenv("PUSHBULLET_TOKEN")
 if not PUSHBULLET_TOKEN:
     raise RuntimeError("PUSHBULLET_TOKEN environment variable not set")
 
+SOFT_LIMIT = 0.07    # 7%
+HARD_LIMIT = 0.20    # 20%
+
+COPPER_RANGE = (3000, 19000)
+ALUMINIUM_RANGE = (1000, 8000)
 
 def get_log_path():
     """Create dir for log"""
@@ -54,6 +62,53 @@ def log(msg):
     with open(get_log_path(), "a", encoding="utf-8") as f:
         f.write(f"[{ts}] {msg}\n")
 
+
+def load_last_prices():
+    if not os.path.exists(LAST_PRICE_FILE):
+        log("No last_prices.json found – first run")
+        return None
+    try:
+        with open(LAST_PRICE_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        log(f"FAILED to read last_prices.json: {e}")
+        return None
+
+def save_last_prices(copper_eur, aluminium_eur):
+    data = {
+        "date": datetime.date.today().isoformat(),
+        "copper_eur": copper_eur,
+        "aluminium_eur": aluminium_eur
+    }
+    with open(LAST_PRICE_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+    log("last_prices.json updated successfully")
+
+
+def validate_price(new, old, metal_name, valid_range):
+    if not (valid_range[0] <= new <= valid_range[1]):
+        raise RuntimeError(
+            f"{metal_name} price {new} out of absolute range {valid_range}"
+        )
+
+    if old is None:
+        return "OK"
+
+    change = abs(new - old) / old
+
+    if change > HARD_LIMIT:
+        raise RuntimeError(
+            f"{metal_name} price jump {change*100:.1f}% exceeds HARD limit"
+        )
+
+    if change > SOFT_LIMIT:
+        send_pushbullet(
+            title=f"⚠ {metal_name} price unusual change",
+            body=f"Change: {change*100:.1f}% (price accepted)"
+        )
+        return "SOFT"
+
+    return "OK"
 
 def remove_old_file(path):
     """remove the old text file"""
@@ -170,28 +225,56 @@ def get_price(auto_keyfile: str, text_file: str, search_text: str):
 
 
 def read_metal_prices():
+    # read last price from disk
+    last = load_last_prices()
+
     # read from israel central bank
     usd_eru, eru_shekel = ur.get_usd_eru()
 
-    #get copper
-    copper_price = get_price(HOT_KEY_FILE_COPPER,COPPER_FILE_NAME,COPPER_TEXT_BEFORE_PRICE)
+    # get copper
+    copper_price = get_price(
+        HOT_KEY_FILE_COPPER,
+        COPPER_FILE_NAME,
+        COPPER_TEXT_BEFORE_PRICE
+    )
     log(f"The copper price from LME Cash is {copper_price:.2f} $/ton")
-    copper_price_eru = round(copper_price*usd_eru,2)
+    copper_price_eru = round(copper_price * usd_eru, 2)
     log(f"The copper price from LME Cash is {copper_price_eru:.2f} {ERU_SYMBOL}/ton")
 
-    #get aluminium
+    # get aluminium
     time.sleep(15)
-    aluminium_price = get_price(HOT_KEY_FILE_ALUMINIUM,ALUMINIUM_FILE_NAME,ALUMINIUM_TEXT_BEFORE_PRICE)
+    aluminium_price = get_price(
+        HOT_KEY_FILE_ALUMINIUM,
+        ALUMINIUM_FILE_NAME,
+        ALUMINIUM_TEXT_BEFORE_PRICE
+    )
     log(f"The aluminium price from LME Cash is {aluminium_price:.2f} $/ton")
-    aluminium_price_eru = round(aluminium_price*usd_eru,2)
+    aluminium_price_eru = round(aluminium_price * usd_eru, 2)
     log(f"The aluminium price from LME Cash is {aluminium_price_eru:.2f} {ERU_SYMBOL}/ton")
-    log(f'Eru price: {eru_shekel}{SHEKEL_SYMBOL}')
-    log ("Up dating the price on ateka drive google sheet cable...")
+
+    log(f"Eru price: {eru_shekel}{SHEKEL_SYMBOL}")
+
+    # validate
+    last_copper = last.get("copper_eur") if isinstance(last, dict) else None
+    last_aluminium = last.get("aluminium_eur") if isinstance(last, dict) else None
+   
+    validate_price(copper_price_eru, last_copper, "Copper", COPPER_RANGE)
+    validate_price(aluminium_price_eru, last_aluminium, "Aluminium", ALUMINIUM_RANGE)
+
+    log("Updating the price on Ateka Google Sheet...")
+
     try:
-        if upg.up_date_price(copper_price_eru,aluminium_price_eru,eru_shekel):
-            return True
-        else:
+        if not upg.up_date_price(
+            copper_price_eru,
+            aluminium_price_eru,
+            eru_shekel
+        ):
             return False
+
+        # ✅ רק אחרי הצלחה מלאה
+        save_last_prices(copper_price_eru, aluminium_price_eru)
+        return True
+
     except Exception as e:
         raise RuntimeError(f"Google Sheet update failed: {e}")
 
