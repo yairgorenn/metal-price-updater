@@ -19,6 +19,8 @@ import datetime
 import os,sys
 import requests
 import json
+from push_prices_to_railway import push_metal_price
+from datetime import date
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 HOT_KEY_FILE_COPPER = os.path.join(BASE_DIR, "readcopper.ahk")
@@ -225,58 +227,79 @@ def get_price(auto_keyfile: str, text_file: str, search_text: str):
 
 
 def read_metal_prices():
-    # read last price from disk
-    last = load_last_prices()
+    # ---------- 1. Load last known prices (for sanity validation only)
+    last = load_last_prices() if isinstance(load_last_prices(), dict) else {}
 
-    # read from israel central bank
-    usd_eru, eru_shekel = ur.get_usd_eru()
+    # ---------- 2. Fetch FX rates
+    usd_to_eur, eur_to_ils = ur.get_usd_eru()
 
-    # get copper
-    copper_price = get_price(
+    if not (0.5 < usd_to_eur < 1.5):
+        raise ValueError(f"usd_to_eur לא סביר: {usd_to_eur}")
+
+    if not (3.0 < eur_to_ils < 6.0):
+        raise ValueError(f"eur_to_ils לא סביר: {eur_to_ils}")
+
+    log(f"FX rates: USD→EUR={usd_to_eur}, EUR→ILS={eur_to_ils}")
+
+    # ---------- 3. Fetch LME prices (USD / ton)
+    copper_usd = get_price(
         HOT_KEY_FILE_COPPER,
         COPPER_FILE_NAME,
         COPPER_TEXT_BEFORE_PRICE
     )
-    log(f"The copper price from LME Cash is {copper_price:.2f} $/ton")
-    copper_price_eru = round(copper_price * usd_eru, 2)
-    log(f"The copper price from LME Cash is {copper_price_eru:.2f} {ERU_SYMBOL}/ton")
 
-    # get aluminium
+    log(f"LME Copper: {copper_usd:.2f} USD/ton")
+
     time.sleep(15)
-    aluminium_price = get_price(
+
+    aluminium_usd = get_price(
         HOT_KEY_FILE_ALUMINIUM,
         ALUMINIUM_FILE_NAME,
         ALUMINIUM_TEXT_BEFORE_PRICE
     )
-    log(f"The aluminium price from LME Cash is {aluminium_price:.2f} $/ton")
-    aluminium_price_eru = round(aluminium_price * usd_eru, 2)
-    log(f"The aluminium price from LME Cash is {aluminium_price_eru:.2f} {ERU_SYMBOL}/ton")
 
-    log(f"Eru price: {eru_shekel}{SHEKEL_SYMBOL}")
+    log(f"LME Aluminium: {aluminium_usd:.2f} USD/ton")
 
-    # validate
-    last_copper = last.get("copper_eur") if isinstance(last, dict) else None
-    last_aluminium = last.get("aluminium_eur") if isinstance(last, dict) else None
-   
-    validate_price(copper_price_eru, last_copper, "Copper", COPPER_RANGE)
-    validate_price(aluminium_price_eru, last_aluminium, "Aluminium", ALUMINIUM_RANGE)
+    # ---------- 4. Convert to EUR / ton (NO ROUNDING)
+    copper_eur = copper_usd * usd_to_eur
+    aluminium_eur = aluminium_usd * usd_to_eur
 
-    log("Updating the price on Ateka Google Sheet...")
+    # ---------- 5. Sanity validation vs last values
+    validate_price(
+        copper_eur,
+        last.get("copper_eur"),
+        "Copper",
+        COPPER_RANGE
+    )
 
-    try:
-        if not upg.up_date_price(
-            copper_price_eru,
-            aluminium_price_eru,
-            eru_shekel
-        ):
-            return False
+    validate_price(
+        aluminium_eur,
+        last.get("aluminium_eur"),
+        "Aluminium",
+        ALUMINIUM_RANGE
+    )
 
-        # ✅ רק אחרי הצלחה מלאה
-        save_last_prices(copper_price_eru, aluminium_price_eru)
-        return True
+    # ---------- 6. Persist to Railway (source of truth)
+    today_iso = date.today().isoformat()
 
-    except Exception as e:
-        raise RuntimeError(f"Google Sheet update failed: {e}")
+    push_metal_price("CU", copper_eur, eur_to_ils, today_iso)
+    push_metal_price("AL", aluminium_eur, eur_to_ils, today_iso)
+    log("Railway ingest completed successfully")
+
+    # ---------- 7. Update Google Sheet (presentation layer)
+    if not upg.up_date_price(
+        round(copper_eur, 2),
+        round(aluminium_eur, 2),
+        eur_to_ils
+    ):
+        raise RuntimeError("Google Sheet update failed")
+
+    # ---------- 8. Persist last known good values (local safety net)
+    save_last_prices(copper_eur, aluminium_eur)
+
+    log("Metal prices updated successfully")
+
+    return True
 
 
 def main():

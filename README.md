@@ -58,11 +58,11 @@ After a fully successful update (prices scraped, validated, and written to Googl
 
 {
 
-&nbsp; "date": "2025-01-30",
+  "date": "2025-01-30",
 
-&nbsp; "copper\_eur": 8123.45,
+  "copper\_eur": 8123.45,
 
-&nbsp; "aluminium\_eur": 2240.10
+  "aluminium\_eur": 2240.10
 
 }
 
@@ -203,4 +203,184 @@ No retry logic
 
 
 The system is designed to stop safely and alert immediately rather than silently propagate incorrect prices.
+
+
+
+
+
+Remote Price Publishing (Railway API)
+
+
+
+In addition to updating Google Sheets, the system can optionally publish the validated metal prices to a remote backend service hosted on Railway.
+
+
+
+Purpose
+
+
+
+The Railway service acts as a lightweight, authoritative price source for downstream consumers (e.g. client applications, internal tools), providing:
+
+
+
+A single current price per metal (no history)
+
+
+
+Server-side calculation of ILS price per kg
+
+
+
+Centralized access via a simple HTTP API
+
+
+
+Google Sheets remains a human-readable reference and operational backup, not a system dependency.
+
+
+
+How it works
+
+
+
+After prices are successfully:
+
+
+
+Scraped from LME
+
+
+
+Converted from USD → EUR
+
+
+
+Validated against the last known local values
+
+
+
+The updater sends the data to the Railway API using a dedicated module:
+
+
+
+push\_prices\_to\_railway.py
+
+
+
+
+
+Each metal is sent independently.
+
+
+
+The payload includes:
+
+
+
+Metal code (e.g. CU, AL)
+
+
+
+Price in EUR per ton
+
+
+
+Current EUR → ILS exchange rate
+
+
+
+Price date (ISO format)
+
+
+
+Example logical flow:
+
+
+
+LME (USD/ton)
+
+&nbsp;→ converted to EUR/ton locally
+
+&nbsp;→ validated locally
+
+&nbsp;→ sent to Railway
+
+&nbsp;→ stored as the current authoritative price
+
+
+
+API behavior (Railway side)
+
+
+
+The backend enforces one row per metal
+
+
+
+Incoming data updates the existing row (upsert by metal code)
+
+
+
+No historical records are kept
+
+
+
+IDs may increment internally (database behavior), but only the latest values are used
+
+
+
+The Railway service is designed to be stateless from the updater’s point of view.
+
+
+
+Failure handling
+
+
+
+If the Railway API call fails:
+
+
+
+The failure is logged
+
+
+
+A Pushbullet alert is sent
+
+
+
+The updater exits with a non-zero status
+
+
+
+Local state (last\_prices.json) is only updated after all outputs succeed
+
+
+
+This ensures fail-closed behavior and prevents partial or inconsistent updates.
+
+
+
+Design notes
+
+
+
+The updater performs no reads from Railway
+
+
+
+Railway is treated as a write-only publishing target
+
+
+
+No retry logic is implemented by design
+
+
+
+Any inconsistency must be visible immediately via alerts
+
+
+
+This keeps the ingestion path deterministic, debuggable, and aligned with industrial control principles.
 
